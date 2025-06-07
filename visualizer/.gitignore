@@ -1,0 +1,12 @@
+nodes
+venv
+__pycache__
+lib
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.pyzw
+llm_graph.html
