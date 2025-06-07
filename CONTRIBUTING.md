@@ -10,7 +10,8 @@
 2. Compile using `cd node-sdk && npm run build`
 
 ## Publishing
-1. `cd node-sdk && npm run release`
+1. Make sure that you have updated the version in `node-sdk/package.json` and in `node-sdk/package-lock.json`
+2. `cd node-sdk && npm run release`
 
 
 # Visualizer
