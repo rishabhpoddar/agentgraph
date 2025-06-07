@@ -130,6 +130,9 @@ function isInputPrefixSame(previousInput: OpenAI.Responses.ResponseInput, newInp
 }
 
 export async function callLLMWithToolHandling<T extends OpenAI.Responses.Response>(name: string, sessionId: string, toolId: string | undefined, f: (input: OpenAI.Responses.ResponseInput) => Promise<T>, initialInput: OpenAI.Responses.ResponseInput, toolImplementation: ToolImplementation[], nameCount: number | undefined = undefined): Promise<T> {
+    if (sessionIdNameInputMap[sessionId] === undefined) {
+        sessionIdNameInputMap[sessionId] = {};
+    }
     if (sessionIdNameInputMap[sessionId][name] === undefined) {
         sessionIdNameInputMap[sessionId][name] = [...initialInput];
     } else {
