@@ -7,7 +7,7 @@
   "unpkg": "dist/index.umd.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "rm -rf dist && npx microbundle --tsconfig tsconfig.json --no-sourcemap",
+    "build": "rm -rf dist && npx tsc",
     "release": "npm run build && npm publish --access public"
   },
   "repository": {
@@ -25,7 +25,6 @@
   },
   "homepage": "https://github.com/rishabhpoddar/agentgraph#readme",
   "devDependencies": {
-    "microbundle": "^0.15.1",
     "openai": "^4.95.1",
     "typescript": "^5.8.3"
   },
@@ -34,8 +33,7 @@
     "uuid": "^11.1.0"
   },
   "exports": {
-    "require": "./dist/index.js",
-    "default": "./dist/index.modern.mjs"
+    "require": "./dist/index.js"
   },
   "files": [
     "dist"
