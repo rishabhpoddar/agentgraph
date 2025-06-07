@@ -13,7 +13,7 @@
 1. `cd node-sdk && npm run release`
 
 
-## Visualizer
+# Visualizer
 
 1. `cd visualizer && python -m venv venv && source venv/bin/activate`
 2. `pip install -r requirements.txt`
