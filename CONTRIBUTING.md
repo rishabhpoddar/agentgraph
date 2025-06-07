@@ -12,3 +12,10 @@
 ## Publishing
 1. `cd node-sdk && npm run release`
 
+
+## Visualizer
+
+1. `cd visualizer && python -m venv venv && source venv/bin/activate`
+2. `pip install -r requirements.txt`
+3. `python main.py <path_to_json_file>`
+
