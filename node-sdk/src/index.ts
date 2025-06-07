@@ -361,5 +361,11 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
 }
 
 function writeNodeToFile(node: Node) {
-    fs.writeFileSync("./llm_visualiser/nodes/" + node.sessionId + ".json", JSON.stringify(node, null, 2), { flag: 'w' });
+    if (process.env.AGENT_GRAPH_SAVE_OUTPUT === "true") {
+        let outputDir = process.env.AGENT_GRAPH_OUTPUT_DIR || "./agentgraph_output";
+        if (!outputDir.endsWith("/")) {
+            outputDir += "/";
+        }
+        fs.writeFileSync(outputDir + node.sessionId + ".json", JSON.stringify(node, null, 2), { flag: 'w' });
+    }
 }
