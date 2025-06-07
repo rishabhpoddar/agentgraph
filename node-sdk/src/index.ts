@@ -129,7 +129,7 @@ function isInputPrefixSame(previousInput: OpenAI.Responses.ResponseInput, newInp
     return true;
 }
 
-export async function callLLMWithToolHandling<T extends OpenAI.Responses.Response>(name: string, sessionId: string, toolId: string | undefined, f: (input: OpenAI.Responses.ResponseInput) => Promise<T>, initialInput: OpenAI.Responses.ResponseInput, toolImplementation: ToolImplementation[], nameCount: number | undefined = undefined): Promise<T> {
+export async function callLLMWithToolHandling<T extends OpenAI.Responses.Response>(name: string, sessionId: string, toolId: string | undefined, f: (input: OpenAI.Responses.ResponseInput) => Promise<T>, initialInput: OpenAI.Responses.ResponseInput, toolImplementation: ToolImplementation[], maxToolCallIterations: number = 20, nameCount: number | undefined = undefined): Promise<T> {
     if (sessionIdNameInputMap[sessionId] === undefined) {
         sessionIdNameInputMap[sessionId] = {};
     }
@@ -141,7 +141,7 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
             sessionIdNameInputMap[sessionId][name] = [...initialInput];
         } else {
             name = name + " (" + (nameCount === undefined ? 1 : nameCount + 1) + ")";
-            return callLLMWithToolHandling(name, sessionId, toolId, f, initialInput, toolImplementation, nameCount === undefined ? 1 : nameCount + 1);
+            return callLLMWithToolHandling(name, sessionId, toolId, f, initialInput, toolImplementation, maxToolCallIterations, nameCount === undefined ? 1 : nameCount + 1);
         }
     }
     let inputWithoutToolCalls = initialInput.filter(input => input.type === "message" || input.type === undefined);
@@ -228,10 +228,8 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
 
     let input = initialInput;
     let response: T | undefined;
-    let functionWasCalled = false;
-    let maxIterations = 20; // Prevent infinite loops
     let iterationCount = 0;
-    while (iterationCount < maxIterations) {
+    while (iterationCount < maxToolCallIterations) {
         iterationCount++;
         response = await f(input);
         let responseContainsToolCalls = false;
@@ -325,7 +323,6 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
         if (!responseContainsToolCalls) {
             break;
         }
-        functionWasCalled = true;
         if (toolPromises.length > 0) {
             await Promise.all(toolPromises);
             writeNodeToFile(rootNodeForSessionId);

@@ -6,7 +6,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
  
 ## [Unreleased] - yyyy-mm-dd
- 
+
+## [0.0.3] - 2025-06-07
+
+### Added
+- Added a way for users to change the max number of tool call iterations.
+
 ## [0.0.2] - 2025-06-07
  
 ### Fixed
