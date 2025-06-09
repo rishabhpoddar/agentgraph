@@ -146,6 +146,93 @@ console.log(response.output_text)
     - We tell the OpenAI SDK about the tool in the `tools` parameter. We describe the input.
     - We pass in an implementation of the tool in the array passed to the `callLLMWithToolHandling` function (last parameter). Here, we get the expression from the LLM, as a string and use the `mathjs` library to evaluate it. We return a string as a response for the LLM to use.
 - The `callLLMWithToolHandling` function will automatically handle tool calling if needed, and return the final response from the LLM. It will also capture the tool calls and store it a part of the JSON file generated for this LLM call. So here, we will have 3 nodes in the main graph (system message ->user message -> assistant message) and then when you click on the user message node, it will show a sub graph with the tool call node (if the LLM decided to use the tool), which will contain just the tool input (value of `expression`) and output (return value from the `impl` function). So 2 nodes in total.
+- You can add multiple tools and tool implementations in a similar way.
+
+
+### Use with tools that use LLMs
+
+In this section, we will see how to add a tool that uses an LLMs, that also use the `callLLMWithToolHandling` wrapper function. We will take an example where the tool tells a story about a topic, and the main LLM call uses this tool when the user asks it for a story.
+
+```ts
+import { v4 } from 'uuid';
+import OpenAI from "openai";
+import { callLLMWithToolHandling } from "@trythisapp/agentgraph";
+import { ResponseFunctionToolCall } from "openai/resources/responses/responses";
+
+let openaiClient = new OpenAI({
+    apiKey: process.env['OPENAI_API_KEY'],
+});
+
+// this is the story getting agent (used as a tool for the main llm call)
+async function generateStory(topic: string, toolId: string, sessionId: string) {
+    let input: OpenAI.Responses.ResponseInput = [
+        {role: "user", content: "Tell me a story about this topic: " + topic}
+    ];
+    let response = await callLLMWithToolHandling("story-teller", sessionId, toolId, async (inp) => {
+        return await openaiClient.responses.create({
+            model: "gpt-4.1",
+            input: inp
+        });
+    }, input, []);
+    return response.output_text;
+}
+
+// This is the main LLM call implementation.
+const agentName = "my-agent"
+const sessionId = v4(); // or it can be any other ID
+let input: OpenAI.Responses.ResponseInput = [
+    {role: "system", content: "You are a helpful assistant. If the user asks for a story, use the tellStory tool."},
+    {role: "user", content: "Tell me a story."}
+];
+
+let response = await callLLMWithToolHandling(agentName, sessionId, undefined, async (inp) => {
+    return await openaiClient.responses.create({
+        model: "gpt-4.1",
+        input: inp,
+        tools: [{
+            type: "function",
+            strict: true,
+            name: "tellStory",
+            description: "Use this tool when you need to tell a story. Example topic: \"A story about a cat\"",
+            parameters: {
+                type: 'object',
+                properties: {
+                    topic: {
+                        type: 'string',
+                        description: 'The topic of the story to tell.',
+                    },
+                },
+                required: ['topic'],
+                additionalProperties: false
+            },
+        }]
+    });
+}, input, [{
+    toolName: "tellStory",
+    impl: async ({ topic }: { topic: string }, toolId: string) => {
+        return await generateStory(topic, toolId, sessionId);
+    },
+    convertErrorToString: (err: any) => {
+        // In case the impl function throws an error, this function is called to convert the error to a string. You can return any string here, or just rethrow the error.
+        // It is passed to the LLM as the response from the tool call.
+        return err.message;
+    },
+    shouldExecuteInParallel: (input: { toolName: string; toolArgs: string; toolCallId: string; allToolCalls: ResponseFunctionToolCall[] }) => {
+        // if there are multiple tool calls, this controls if we should run them in parallel or not. You can
+        // return true / false dynamically based on the input and if the tools you create depend on each other or not (if they have shared
+        // memory for example, then you may not want to run them in parallel).
+        return true;
+    },
+}]);
+
+console.log(response.output_text)
+```
+
+- In this case, we have added a tool for the LLM to do math:
+    - We tell the LLM about the tool in the system prompt (you can also do this in the user prompt).
+    - We tell the OpenAI SDK about the tool in the `tools` parameter. We describe the input.
+    - We pass in an implementation of the tool in the array passed to the `callLLMWithToolHandling` function (last parameter). Here, we get the expression from the LLM, as a string and use the `mathjs` library to evaluate it. We return a string as a response for the LLM to use.
+- The `callLLMWithToolHandling` function will automatically handle tool calling if needed, and return the final response from the LLM. It will also capture the tool calls and store it a part of the JSON file generated for this LLM call. So here, we will have 3 nodes in the main graph (system message ->user message -> assistant message) and then when you click on the user message node, it will show a sub graph with the tool call node (if the LLM decided to use the tool), which will contain just the tool input (value of `expression`) and output (return value from the `impl` function). So 2 nodes in total.
 
 
 ## Integrating the Python SDK
