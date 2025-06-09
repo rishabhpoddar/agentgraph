@@ -42,7 +42,7 @@ AGENT_GRAPH_SAVE_OUTPUT=true
 - `AGENT_GRAPH_OUTPUT_DIR`: The directory to save the output json files of the llm calls.
 - `AGENT_GRAPH_SAVE_OUTPUT`: Whether to save the output json files of the llm calls or not.
 
-**Important: We recommend that you set `AGENT_GRAPH_SAVE_OUTPUT` to `true` only in a development environment, and set it to `false` in a production environment. This is because we do not want to save output JSON files in the file system in production. We are working on storing the JSON files in a database instead, and when that is released, this can be enabled in production as well. Tool calling is not affected by this flag.**
+**IMPORTANT: We recommend that you set `AGENT_GRAPH_SAVE_OUTPUT` to `true` only in a development environment, and set it to `false` in a production environment. This is because we do not want to save output JSON files in the file system in production. We are working on storing the JSON files in a database instead, and when that is released, this can be enabled in production as well. Tool calling is not affected by this flag.**
 
 ### Use without tool calling
 
