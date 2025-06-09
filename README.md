@@ -1,5 +1,11 @@
 # AgentGraph
 
+## Table of Contents
+- [Overview](#overview)
+- [Integrating the Node SDK](#integrating-the-node-sdk)
+- [Integrating the Python SDK](#integrating-the-python-sdk)
+- [Visualizing the Graph](#visualizing-the-graph)
+
 This is a utility that manages LLM tool calls and creates a graph for your agent flows:
 - Each node in the graph is one message in a conversation with an LLM (ex: system message -> user message -> assistant message)
 - A node can have a sub graph if the LLM used tool calling in that turn. You can click on the node to view the list of tools called, their inputs and outputs, and visualize the tool call's sub graphs.
