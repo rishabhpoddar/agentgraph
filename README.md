@@ -86,6 +86,7 @@ import { v4 } from 'uuid';
 import OpenAI from "openai";
 import * as math from 'mathjs';
 import { callLLMWithToolHandling } from "@trythisapp/agentgraph";
+import { ResponseFunctionToolCall } from "openai/resources/responses/responses";
 
 let openaiClient = new OpenAI({
     apiKey: process.env['OPENAI_API_KEY'],
@@ -136,7 +137,13 @@ let response = await callLLMWithToolHandling(agentName, sessionId, undefined, as
         // In case the impl function throws an error, this function is called to convert the error to a string. You can return any string here, or just rethrow the error.
         // It is passed to the LLM as the response from the tool call.
         return err.message;
-    }
+    },
+    shouldExecuteInParallel: (input: { toolName: string; toolArgs: string; toolCallId: string; allToolCalls: ResponseFunctionToolCall[] }) => {
+        // if there are multiple tool calls, this controls if we should run them in parallel or not. You can
+        // return true / false dynamically based on the input and if the tools you create depend on each other or not (if they have shared
+        // memory for example, then you may not want to run them in parallel).
+        return true;
+    },
 }]);
 
 console.log(response.output_text)
@@ -148,6 +155,11 @@ console.log(response.output_text)
     - We pass in an implementation of the tool in the array passed to the `callLLMWithToolHandling` function (last parameter). Here, we get the expression from the LLM, as a string and use the `mathjs` library to evaluate it. We return a string as a response for the LLM to use.
 - The `callLLMWithToolHandling` function will automatically handle tool calling if needed, and return the final response from the LLM. It will also capture the tool calls and store it a part of the JSON file generated for this LLM call. So here, we will have 3 nodes in the main graph (system message ->user message -> assistant message) and then when you click on the user message node, it will show a sub graph with the tool call node (if the LLM decided to use the tool), which will contain just the tool input (value of `expression`) and output (return value from the `impl` function). So 2 nodes in total.
 - You can add multiple tools and tool implementations in a similar way.
+- The `shouldExecuteInParallel` function controls whether multiple tool calls should run concurrently or sequentially within a single LLM response iteration. An iteration represents one complete response cycle from the LLM. For example:
+  - **Sequential tool calls (2 iterations):** LLM calls toolA → receives result → calls toolB based on toolA's output
+  - **Parallel tool calls (1 iteration):** LLM calls both toolA and toolB simultaneously since they're independent
+  
+  This function receives the current tool call details plus information about all other tool calls in the same iteration, allowing you to make dynamic decisions based on tool dependencies.
 
 
 ### Use with tools that use LLMs
@@ -229,11 +241,7 @@ let response = await callLLMWithToolHandling(agentName, sessionId, undefined, as
 console.log(response.output_text)
 ```
 
-- In this case, we have added a tool for the LLM to do math:
-    - We tell the LLM about the tool in the system prompt (you can also do this in the user prompt).
-    - We tell the OpenAI SDK about the tool in the `tools` parameter. We describe the input.
-    - We pass in an implementation of the tool in the array passed to the `callLLMWithToolHandling` function (last parameter). Here, we get the expression from the LLM, as a string and use the `mathjs` library to evaluate it. We return a string as a response for the LLM to use.
-- The `callLLMWithToolHandling` function will automatically handle tool calling if needed, and return the final response from the LLM. It will also capture the tool calls and store it a part of the JSON file generated for this LLM call. So here, we will have 3 nodes in the main graph (system message ->user message -> assistant message) and then when you click on the user message node, it will show a sub graph with the tool call node (if the LLM decided to use the tool), which will contain just the tool input (value of `expression`) and output (return value from the `impl` function). So 2 nodes in total.
+TODO..
 
 
 ## Integrating the Python SDK
