@@ -3,6 +3,9 @@
 ## Table of Contents
 - [Overview](#overview)
 - [Integrating the Node SDK](#integrating-the-node-sdk)
+    - [Installation](#installation)
+    - [Use without tool calling](#use-without-tool-calling)
+    - [Use with simple tool calling](#use-with-simple-tool-calling)
 - [Integrating the Python SDK](#integrating-the-python-sdk)
 - [Visualizing the Graph](#visualizing-the-graph)
 
