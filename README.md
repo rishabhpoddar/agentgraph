@@ -53,7 +53,7 @@ AGENT_GRAPH_SAVE_OUTPUT=true
 ```ts
 import { v4 } from 'uuid';
 import OpenAI from "openai";
-import { callLLMWithToolHandling } from "@trythisapp/agentgraph";
+import { callLLMWithToolHandling, clearSessionId } from "@trythisapp/agentgraph";
 
 let openaiClient = new OpenAI({
     apiKey: process.env['OPENAI_API_KEY'],
@@ -61,21 +61,27 @@ let openaiClient = new OpenAI({
 
 const agentName = "my-agent"
 const sessionId = v4(); // or it can be any other ID
-let input: OpenAI.Responses.ResponseInput = [{role: "user", content: "Hello, how are you?"}];
+try {
+    let input: OpenAI.Responses.ResponseInput = [{role: "user", content: "Hello, how are you?"}];
 
-let response = await callLLMWithToolHandling(agentName, sessionId, undefined, async (inp) => {
-    return await openaiClient.responses.create({
-        model: "gpt-4.1",
-        input: inp,
-    });
-}, input, []);
+    let response = await callLLMWithToolHandling(agentName, sessionId, undefined, async (inp) => {
+        return await openaiClient.responses.create({
+            model: "gpt-4.1",
+            input: inp,
+        });
+    }, input, []);
 
-console.log(response.output_text)
+    console.log(response.output_text)
+} finally {
+    // this frees up the resources used by the sessionId
+    clearSessionId(sessionId);
+}
 ```
 
-- In the above, we can see how we have wrapped a simple OpenAI call with `callLLMWithToolHandling` (the wrapper function) from our SDK.
+- In the above, we can see how we have wrapped a simple OpenAI call with `callLLMWithToolHandling` (the wrapper function) from our SDK. We pass in a unique `sessionId` that's unique for this instance of the LLM call. The JSON file that is generated will be this `${sessionId}.json`.
 - In this case, since there is no tool calling, the wrapper function will just capture the user message and the assistant reply, i.e. there will be only 2 nodes in the graph.
 - You can also add a system message in the input, in which case, there will be 3 nodes in the graph.
+- The final call to `clearSessionId` is important. It frees up the resources used by the sessionId. The JSON output file that's generated from the LLM call is not affected by this.
 
 ### Use with simple tool calling
 
@@ -85,7 +91,7 @@ In this section, we will see how to add a simple tool call. The tool call implem
 import { v4 } from 'uuid';
 import OpenAI from "openai";
 import * as math from 'mathjs';
-import { callLLMWithToolHandling } from "@trythisapp/agentgraph";
+import { callLLMWithToolHandling, clearSessionId } from "@trythisapp/agentgraph";
 import { ResponseFunctionToolCall } from "openai/resources/responses/responses";
 
 let openaiClient = new OpenAI({
@@ -94,59 +100,64 @@ let openaiClient = new OpenAI({
 
 const agentName = "my-agent"
 const sessionId = v4(); // or it can be any other ID
-let input: OpenAI.Responses.ResponseInput = [
-    {role: "system", content: "You are a helpful assistant that can do math. Use the doMath tool if needed."},
-    {role: "user", content: "What is 21341*42422?"}
-];
+try {
+    let input: OpenAI.Responses.ResponseInput = [
+        {role: "system", content: "You are a helpful assistant that can do math. Use the doMath tool if needed."},
+        {role: "user", content: "What is 21341*42422?"}
+    ];
 
-let response = await callLLMWithToolHandling(agentName, sessionId, undefined, async (inp) => {
-    return await openaiClient.responses.create({
-        model: "gpt-4.1",
-        input: inp,
-        tools: [{
-            type: "function",
-            strict: true,
-            name: "doMath",
-            description: "Use this tool when you need to do math (for things like calculating total or average calories etc). Example expressions: " + "'5.6 * (5 + 10.5)', '7.86 cm to inch', 'cos(80 deg) ^ 4'.",
-            parameters: {
-                type: 'object',
-                properties: {
-                    expression: {
-                        type: 'string',
-                        description: 'The mathematical expression to evaluate.',
+    let response = await callLLMWithToolHandling(agentName, sessionId, undefined, async (inp) => {
+        return await openaiClient.responses.create({
+            model: "gpt-4.1",
+            input: inp,
+            tools: [{
+                type: "function",
+                strict: true,
+                name: "doMath",
+                description: "Use this tool when you need to do math (for things like calculating total or average calories etc). Example expressions: " + "'5.6 * (5 + 10.5)', '7.86 cm to inch', 'cos(80 deg) ^ 4'.",
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        expression: {
+                            type: 'string',
+                            description: 'The mathematical expression to evaluate.',
+                        },
                     },
+                    required: ['expression'],
+                    additionalProperties: false
                 },
-                required: ['expression'],
-                additionalProperties: false
-            },
-        }]
-    });
-}, input, [{
-    toolName: "doMath",
-    impl: async ({ expression }: { expression: string }) => {
-        let response = math.evaluate(expression);
-        if (typeof response === "string") {
-            return response;
-        } else if (typeof response === "number") {
-            return response.toString();
-        } else {
-            return JSON.stringify(response);
-        }
-    },
-    convertErrorToString: (err: any) => {
-        // In case the impl function throws an error, this function is called to convert the error to a string. You can return any string here, or just rethrow the error.
-        // It is passed to the LLM as the response from the tool call.
-        return err.message;
-    },
-    shouldExecuteInParallel: (input: { toolName: string; toolArgs: string; toolCallId: string; allToolCalls: ResponseFunctionToolCall[] }) => {
-        // if there are multiple tool calls, this controls if we should run them in parallel or not. You can
-        // return true / false dynamically based on the input and if the tools you create depend on each other or not (if they have shared
-        // memory for example, then you may not want to run them in parallel).
-        return true;
-    },
-}]);
+            }]
+        });
+    }, input, [{
+        toolName: "doMath",
+        impl: async ({ expression }: { expression: string }) => {
+            let response = math.evaluate(expression);
+            if (typeof response === "string") {
+                return response;
+            } else if (typeof response === "number") {
+                return response.toString();
+            } else {
+                return JSON.stringify(response);
+            }
+        },
+        convertErrorToString: (err: any) => {
+            // In case the impl function throws an error, this function is called to convert the error to a string. You can return any string here, or just rethrow the error.
+            // It is passed to the LLM as the response from the tool call.
+            return err.message;
+        },
+        shouldExecuteInParallel: (input: { toolName: string; toolArgs: string; toolCallId: string; allToolCalls: ResponseFunctionToolCall[] }) => {
+            // if there are multiple tool calls, this controls if we should run them in parallel or not. You can
+            // return true / false dynamically based on the input and if the tools you create depend on each other or not (if they have shared
+            // memory for example, then you may not want to run them in parallel).
+            return true;
+        },
+    }]);
 
-console.log(response.output_text)
+    console.log(response.output_text)
+} finally {
+    // this frees up the resources used by the sessionId
+    clearSessionId(sessionId);
+}
 ```
 
 - In this case, we have added a tool for the LLM to do math:
@@ -169,7 +180,7 @@ In this section, we will see how to add a tool that uses an LLMs, that also use 
 ```ts
 import { v4 } from 'uuid';
 import OpenAI from "openai";
-import { callLLMWithToolHandling } from "@trythisapp/agentgraph";
+import { callLLMWithToolHandling, clearSessionId } from "@trythisapp/agentgraph";
 import { ResponseFunctionToolCall } from "openai/resources/responses/responses";
 
 let openaiClient = new OpenAI({
@@ -193,55 +204,61 @@ async function generateStory(topic: string, toolId: string, sessionId: string) {
 // This is the main LLM call implementation.
 const agentName = "my-agent"
 const sessionId = v4(); // or it can be any other ID
-let input: OpenAI.Responses.ResponseInput = [
-    {role: "system", content: "You are a helpful assistant. If the user asks for a story, use the tellStory tool."},
-    {role: "user", content: "Tell me a story."}
-];
+try {
+    let input: OpenAI.Responses.ResponseInput = [
+        {role: "system", content: "You are a helpful assistant. If the user asks for a story, use the tellStory tool."},
+        {role: "user", content: "Tell me a story."}
+    ];
 
-let response = await callLLMWithToolHandling(agentName, sessionId, undefined, async (inp) => {
-    return await openaiClient.responses.create({
-        model: "gpt-4.1",
-        input: inp,
-        tools: [{
-            type: "function",
-            strict: true,
-            name: "tellStory",
-            description: "Use this tool when you need to tell a story. Example topic: \"A story about a cat\"",
-            parameters: {
-                type: 'object',
-                properties: {
-                    topic: {
-                        type: 'string',
-                        description: 'The topic of the story to tell.',
+    let response = await callLLMWithToolHandling(agentName, sessionId, undefined, async (inp) => {
+        return await openaiClient.responses.create({
+            model: "gpt-4.1",
+            input: inp,
+            tools: [{
+                type: "function",
+                strict: true,
+                name: "tellStory",
+                description: "Use this tool when you need to tell a story. Example topic: \"A story about a cat\"",
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        topic: {
+                            type: 'string',
+                            description: 'The topic of the story to tell.',
+                        },
                     },
+                    required: ['topic'],
+                    additionalProperties: false
                 },
-                required: ['topic'],
-                additionalProperties: false
-            },
-        }]
-    });
-}, input, [{
-    toolName: "tellStory",
-    impl: async ({ topic }: { topic: string }, toolId: string) => {
-        return await generateStory(topic, toolId, sessionId);
-    },
-    convertErrorToString: (err: any) => {
-        // In case the impl function throws an error, this function is called to convert the error to a string. You can return any string here, or just rethrow the error.
-        // It is passed to the LLM as the response from the tool call.
-        return err.message;
-    },
-    shouldExecuteInParallel: (input: { toolName: string; toolArgs: string; toolCallId: string; allToolCalls: ResponseFunctionToolCall[] }) => {
-        // if there are multiple tool calls, this controls if we should run them in parallel or not. You can
-        // return true / false dynamically based on the input and if the tools you create depend on each other or not (if they have shared
-        // memory for example, then you may not want to run them in parallel).
-        return true;
-    },
-}]);
+            }]
+        });
+    }, input, [{
+        toolName: "tellStory",
+        impl: async ({ topic }: { topic: string }, toolId: string) => {
+            return await generateStory(topic, toolId, sessionId);
+        },
+        convertErrorToString: (err: any) => {
+            // In case the impl function throws an error, this function is called to convert the error to a string. You can return any string here, or just rethrow the error.
+            // It is passed to the LLM as the response from the tool call.
+            return err.message;
+        },
+        shouldExecuteInParallel: (input: { toolName: string; toolArgs: string; toolCallId: string; allToolCalls: ResponseFunctionToolCall[] }) => {
+            // if there are multiple tool calls, this controls if we should run them in parallel or not. You can
+            // return true / false dynamically based on the input and if the tools you create depend on each other or not (if they have shared
+            // memory for example, then you may not want to run them in parallel).
+            return true;
+        },
+    }]);
 
-console.log(response.output_text)
+    console.log(response.output_text)
+} finally {
+    // this frees up the resources used by the sessionId
+    clearSessionId(sessionId);
+}
 ```
 
-TODO..
+- In this case, when the tool is called by the main LLM call, it will make another LLM call to generate its output. This is an example of a typical multi agent flow.
+- 
 
 
 ## Integrating the Python SDK
