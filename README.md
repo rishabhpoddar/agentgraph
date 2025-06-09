@@ -129,6 +129,8 @@ let response = await callLLMWithToolHandling(agentName, sessionId, undefined, as
         }
     },
     convertErrorToString: (err: any) => {
+        // In case the impl function throws an error, this function is called to convert the error to a string. You can return any string here, or just rethrow the error.
+        // It is passed to the LLM as the response from the tool call.
         return err.message;
     }
 }]);
