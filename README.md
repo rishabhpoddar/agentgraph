@@ -25,6 +25,55 @@ Below are the steps on how to integrate our SDK into your code, and visualize th
 
 ## Integrating the Node SDK
 
+### Installation
+
+Install the package using npm:
+```bash
+npm install --save @trythisapp/agentgraph
+```
+
+Add these environment variables to your `.env` file:
+
+```
+AGENT_GRAPH_OUTPUT_DIR=./agentgraph_output
+AGENT_GRAPH_SAVE_OUTPUT=true
+```
+
+- `AGENT_GRAPH_OUTPUT_DIR`: The directory to save the output json files of the llm calls.
+- `AGENT_GRAPH_SAVE_OUTPUT`: Whether to save the output json files of the llm calls or not.
+
+**Important: We recommend that you set `AGENT_GRAPH_SAVE_OUTPUT` to `true` only in a development environment, and set it to `false` in a production environment. This is because we do not want to save output JSON files in the file system in production. We are working on storing the JSON files in a database instead, and when that is released, this can be enabled in production as well. Tool calling is not affected by this flag.**
+
+### Use without tool calling
+
+```ts
+import { v4 } from 'uuid';
+import OpenAI from "openai";
+import { callLLMWithToolHandling } from "@trythisapp/agentgraph";
+
+let openaiClient = new OpenAI({
+    apiKey: process.env['OPENAI_API_KEY'],
+});
+
+const agentName = "my-agent"
+const sessionId = v4(); // or it can be any other ID
+let input: OpenAI.Responses.ResponseInput = [{role: "user", content: "Hello, how are you?"}];
+
+let response = await callLLMWithToolHandling(agentName, sessionId, undefined, async (inp) => {
+    return await openaiClient.responses.create({
+        model: "gpt-4.1",
+        input: inp,
+    });
+}, input, []);
+
+console.log(response.output_text)
+```
+
+- In the above, we can see how we have wrapped a simple OpenAI call with `callLLMWithToolHandling` (the wrapper function) from our SDK.
+- In this case, since there is no tool calling, the wrapper function will just capture the user message and the assistant reply, i.e. there will be only 2 nodes in the graph.
+- You can also add a system message in the input, in which case, there will be 3 nodes in the graph.
+
+
 ## Integrating the Python SDK
 Coming soon...
 
