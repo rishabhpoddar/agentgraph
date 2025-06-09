@@ -6,6 +6,7 @@
     - [Installation](#installation)
     - [Use without tool calling](#use-without-tool-calling)
     - [Use with simple tool calling](#use-with-simple-tool-calling)
+    - [Use with tools that use LLMs](#use-with-tools-that-use-llms)
 - [Integrating the Python SDK](#integrating-the-python-sdk)
 - [Visualizing the Graph](#visualizing-the-graph)
 
