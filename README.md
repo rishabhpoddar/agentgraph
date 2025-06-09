@@ -92,7 +92,10 @@ let openaiClient = new OpenAI({
 
 const agentName = "my-agent"
 const sessionId = v4(); // or it can be any other ID
-let input: OpenAI.Responses.ResponseInput = [{role: "user", content: "What is 21341*42422?. Use the doMath tool if needed."}];
+let input: OpenAI.Responses.ResponseInput = [
+    {role: "system", content: "You are a helpful assistant that can do math. Use the doMath tool if needed."},
+    {role: "user", content: "What is 21341*42422?"}
+];
 
 let response = await callLLMWithToolHandling(agentName, sessionId, undefined, async (inp) => {
     return await openaiClient.responses.create({
@@ -139,10 +142,10 @@ console.log(response.output_text)
 ```
 
 - In this case, we have added a tool for the LLM to do math:
-    - We tell the LLM about the tool in the prompt.
+    - We tell the LLM about the tool in the system prompt (you can also do this in the user prompt).
     - We tell the OpenAI SDK about the tool in the `tools` parameter. We describe the input.
     - We pass in an implementation of the tool in the array passed to the `callLLMWithToolHandling` function (last parameter). Here, we get the expression from the LLM, as a string and use the `mathjs` library to evaluate it. We return a string as a response for the LLM to use.
-- The `callLLMWithToolHandling` function will automatically handle tool calling if needed, and return the final response from the LLM. It will also capture the tool calls and store it a part of the JSON file generated for this LLM call. So here, we will have 2 nodes in the main graph (user message -> assistant message) and then when you click on the user message node, it will show a sub graph with the tool call node, which will contain just the tool input (value of `expression`) and output (return value from the `impl` function). So 2 nodes in total.
+- The `callLLMWithToolHandling` function will automatically handle tool calling if needed, and return the final response from the LLM. It will also capture the tool calls and store it a part of the JSON file generated for this LLM call. So here, we will have 3 nodes in the main graph (system message ->user message -> assistant message) and then when you click on the user message node, it will show a sub graph with the tool call node (if the LLM decided to use the tool), which will contain just the tool input (value of `expression`) and output (return value from the `impl` function). So 2 nodes in total.
 
 
 ## Integrating the Python SDK
