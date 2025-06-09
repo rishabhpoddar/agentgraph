@@ -7,6 +7,7 @@
     - [Use without tool calling](#use-without-tool-calling)
     - [Use with simple tool calling](#use-with-simple-tool-calling)
     - [Use with tools that use LLMs](#use-with-tools-that-use-llms)
+    - [Use with multi agent flows](#use-with-multi-agent-flows)
 - [Integrating the Python SDK](#integrating-the-python-sdk)
 - [Visualizing the Graph](#visualizing-the-graph)
 
@@ -258,7 +259,13 @@ try {
 ```
 
 - In this case, when the tool is called by the main LLM call, it will make another LLM call to generate its output. This is an example of a typical multi agent flow.
-- 
+- When calling the tool, we pass in the `sessionId` and `toolId` to the tool function. This is very important, cause if not provided, the wrapper function will loose the context and will make an incorrect graph.
+- Also notice that we use different agent names. For the main LLM call, we use `my-agent`. For the tool, we use `story-teller`. The nodes in the graph will be named and coloured based on their agent name, so it will be easier to see when the flow changes from one agent to another.
+- The graph that will be generated will have 3 nodes in the main graph (system message -> user message -> assistant message) and then when you click on the user message node, it will show a sub graph with the tool call node (if the LLM decided to use the tool), which will contain nodes corresponding to the function call arguments -> user message -> assistant message -> final tool call output (what's returned from the `impl` function).
+
+### Use with multi agent flows
+
+TODO..
 
 
 ## Integrating the Python SDK
