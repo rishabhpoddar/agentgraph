@@ -265,8 +265,54 @@ try {
 
 ### Use with multi agent flows
 
-TODO..
+If your pipeline has multiple agent calls one by one, you can pass in the same `sessionId` for all of them to form one unified graph for the pipeline.
 
+```ts
+import { v4 } from 'uuid';
+import OpenAI from "openai";
+import { callLLMWithToolHandling, clearSessionId } from "@trythisapp/agentgraph";
+import { ResponseFunctionToolCall } from "openai/resources/responses/responses";
+
+let openaiClient = new OpenAI({
+    apiKey: process.env['OPENAI_API_KEY'],
+});
+
+const sessionId = v4(); // or it can be any other ID
+try {
+    let input: OpenAI.Responses.ResponseInput = [
+        {role: "user", content: "...."}
+    ];
+
+    let response1 = await callLLMWithToolHandling("my-agent1", sessionId, undefined, async (inp) => {
+        return await openaiClient.responses.create({
+            model: "gpt-4.1",
+            input: inp,
+            tools: [...]
+        });
+    }, input, [...]);
+
+    let input2: OpenAI.Responses.ResponseInput = [
+        {role: "user", content: "...."}
+    ];
+
+    let response2 = await callLLMWithToolHandling("my-agent2", sessionId, undefined, async (inp) => {
+        return await openaiClient.responses.create({
+            model: "gpt-4.1",
+            input: inp,
+            tools: [...]
+        });
+    }, input2, [...]);
+
+    console.log(response1.output_text)
+    console.log(response2.output_text)
+} finally {
+    // this frees up the resources used by the sessionId
+    clearSessionId(sessionId);
+}
+```
+
+- In the above, we see two agent calls: `my-agent1` and `my-agent2`. We pas the same `sessionId` to both of them, and this would result in the following graph: User message from `my-agent1` -> assistant message from `my-agent1` -> user message from `my-agent2` -> assistant message from `my-agent2`.
+- The node colours for `my-agent1` and `my-agent2` will be different, so it will be easier to see when the flow changes from one agent to another.
 
 ## Integrating the Python SDK
 Coming soon...
