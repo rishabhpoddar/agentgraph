@@ -323,23 +323,23 @@ Once you run your LLM flow like shown above, the wrapper function will generate 
 
 1. Clone this repo.
 
-```bash
-git clone https://github.com/rishabhpoddar/agentgraph.git
-```
+    ```bash
+    git clone https://github.com/rishabhpoddar/agentgraph.git
+    ```
 
 2. Install the visualizer:
 
-```bash
-cd agentgraph/visualizer
-pip install -r requirements.txt
-```
+    ```bash
+    cd agentgraph/visualizer
+    pip install -r requirements.txt
+    ```
 
 3. Run the visualizer:
 
-```bash
-python main.py <path-to-the-json-file>
-```
+    ```bash
+    python main.py <path-to-the-json-file>
+    ```
 
-For example, if the json file is called `123.json`, then you run `python main.py 123.json`.
+    For example, if the json file is called `123.json`, then you run `python main.py 123.json`.
 
 4. The above command will generate a `llm_graph.html` in the `visualizer` directory. Open this file in your browser to see the graph.
