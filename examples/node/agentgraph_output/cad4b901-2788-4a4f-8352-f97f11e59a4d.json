@@ -1,0 +1,77 @@
+{
+  "nodeId": "b141c49d-1bd1-4f71-b568-69e1d8794f97",
+  "sessionId": "cad4b901-2788-4a4f-8352-f97f11e59a4d",
+  "role": "system",
+  "value": "\nYou are a helpful assistant for querying a database. You need to  answer the user's query by using the following tools:\n- SQLAgent: A tool that converts the natural language query into a SQL query\n- databaseAgent: A tool that executes the SQL query and returns the results\n\nUse these tools only if you need to use them.",
+  "pointingToNode": [
+    {
+      "nodeId": "82e4cc0b-19d7-4c4d-9c9b-30f550195c2c",
+      "sessionId": "cad4b901-2788-4a4f-8352-f97f11e59a4d",
+      "role": "user",
+      "value": "How many users do I have?",
+      "pointingToNode": [
+        {
+          "nodeId": "4408ce5a-1a4c-43d1-b4fa-cd1f33b6b3ac",
+          "sessionId": "cad4b901-2788-4a4f-8352-f97f11e59a4d",
+          "role": "function_call",
+          "value": "call_WwpP7W9cO5IfF5Bp6CKXwPYy",
+          "pointingToNode": [
+            {
+              "nodeId": "dded43a9-a4ef-4877-9b61-18096d8f330e",
+              "sessionId": "cad4b901-2788-4a4f-8352-f97f11e59a4d",
+              "role": "system",
+              "value": "\nYou are an expert SQLite SQL query generator. You are given a database schema, and a user's request (in natural language), and you need to return the SQL query that will return the results for the user's request.\n\n<Database Schema>\nCREATE TABLE users (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    name TEXT NOT NULL,\n    email TEXT NOT NULL\n);\n</Database Schema>\n\n<Output format>\nYour output must be a JSON containing only the SQL query as a string like so:\n```\n{\n    \"sqlQuery\": \"....\"\n}\n```\n</Output format>\n",
+              "pointingToNode": [
+                {
+                  "nodeId": "7d57e73c-87fb-41ad-ac32-8b333e48b9d4",
+                  "sessionId": "cad4b901-2788-4a4f-8352-f97f11e59a4d",
+                  "role": "user",
+                  "value": "How many users are there in the database?",
+                  "pointingToNode": [
+                    {
+                      "nodeId": "6a252259-5b2a-4ee2-9854-2eff683901b1",
+                      "sessionId": "cad4b901-2788-4a4f-8352-f97f11e59a4d",
+                      "role": "assistant",
+                      "value": "{\n    \"sqlQuery\": \"SELECT COUNT(*) AS user_count FROM users;\"\n}",
+                      "pointingToNode": [],
+                      "name": "SQLAgent"
+                    }
+                  ],
+                  "name": "SQLAgent"
+                }
+              ],
+              "name": "SQLAgent"
+            }
+          ],
+          "name": "mainAgent",
+          "toolName": "SQLAgent",
+          "toolArgs": "{\"query\":\"How many users are there in the database?\"}",
+          "toolCallIteration": 1,
+          "toolResult": "{\n    \"sqlQuery\": \"SELECT COUNT(*) AS user_count FROM users;\"\n}"
+        },
+        {
+          "nodeId": "522132d7-d9ad-4dca-9876-bacc71939064",
+          "sessionId": "cad4b901-2788-4a4f-8352-f97f11e59a4d",
+          "role": "function_call",
+          "value": "call_c9lqsVtCQgpTBo20YxZrG5HA",
+          "pointingToNode": [],
+          "name": "mainAgent",
+          "toolName": "databaseAgent",
+          "toolArgs": "{\"query\":\"SELECT COUNT(*) AS user_count FROM users;\"}",
+          "toolCallIteration": 2,
+          "toolResult": "[\n  {\n    \"user_count\": 4\n  }\n]"
+        },
+        {
+          "nodeId": "ee3b8848-8d42-4e02-a1a0-a6574d4f0cc3",
+          "sessionId": "cad4b901-2788-4a4f-8352-f97f11e59a4d",
+          "role": "assistant",
+          "value": "You have 4 users in your database.",
+          "pointingToNode": [],
+          "name": "mainAgent"
+        }
+      ],
+      "name": "mainAgent"
+    }
+  ],
+  "name": "mainAgent"
+}

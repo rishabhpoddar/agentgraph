@@ -1,0 +1,26 @@
+{
+  "nodeId": "60a2f66f-dd9a-42c0-b76e-ec73fe29482a",
+  "sessionId": "f4feff38-894d-4145-bae8-c7b386db12cf",
+  "role": "system",
+  "value": "\nYou are a helpful assistant for querying a database. You need to  answer the user's query by using the following tools:\n- SQLAgent: A tool that converts the natural language query into a SQL query\n- databaseAgent: A tool that executes the SQL query and returns the results\n\nUse these tools only if you need to use them.",
+  "pointingToNode": [
+    {
+      "nodeId": "85e0f2d6-91ec-476c-b2f6-f14821f19ac0",
+      "sessionId": "f4feff38-894d-4145-bae8-c7b386db12cf",
+      "role": "user",
+      "value": "Hi there!",
+      "pointingToNode": [
+        {
+          "nodeId": "626f365d-87ae-4dc7-b4d7-f2c9995cc735",
+          "sessionId": "f4feff38-894d-4145-bae8-c7b386db12cf",
+          "role": "assistant",
+          "value": "Hello! How can I assist you today?",
+          "pointingToNode": [],
+          "name": "mainAgent"
+        }
+      ],
+      "name": "mainAgent"
+    }
+  ],
+  "name": "mainAgent"
+}
