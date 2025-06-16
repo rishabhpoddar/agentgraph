@@ -21,14 +21,26 @@ We will go into the details of how to make such a system in the next section, bu
 ### Query 1: "Hi there!"
 This query has nothing to do with extracting information from the database, so no tool calls are made. The graph for this is:
 
-TODO:.. image
+TODO: <Insert image 5>
 
 ### Query 2: "How many users do I have?"
-This query requires counting the number of rows in the `users` table. So the agent first calls the `SQLAgent` to convert the query into a SQL query, and then calls the `DatabaseAgent` to execute the query. The graph for this is:
+This query requires counting the number of rows in the `users` table. So the agent first calls the `SQLAgent` to convert the query into a SQL query, and then calls the `DatabaseAgent` to execute the query. The graph for main agent is:
 
-TODO:.. image
+TODO: <Insert image 1>
 
-From here, it is easy to imagine how the graph will look like for more complex scenarios, involving more tools and agents.
+As you can see, the second bubble has the user input, the LLM used tools to answer the query, whose answer is shown in the third bubble. When we click on the second bubble, we can see the tool calls made by the LLM:
+
+TODO: <Insert image 2>
+
+The LLM first called the `SQLAgent` tool to convert the query into a SQL query, and then called the `DatabaseAgent` tool to execute the query. We can inspect the sub graph of the `SQLAgent` tool call by clicking on the row:
+
+TODO: <Insert image 3>
+
+In this sub graph, we can clearly see the tool input (orange box) and the output (green box), along with the exact LLM chat history. Here the tool is simple, but it is easy to imagine many steps in this tool call, where other tools could also be used (they would also show up in their respective sub graphs). Finally, we can go back and see the other tool call (`DatabaseAgent`) made by the main agent:
+
+TODO: <Insert image 4>
+
+This tool did not use an LLM, so here we just see the tool input and output.
 
 ## How to integrate AgentGraph with your backend code?
 
