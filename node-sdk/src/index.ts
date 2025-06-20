@@ -110,7 +110,7 @@ function isInputPrefixSame(previousInput: OpenAI.Responses.ResponseInput, newInp
             return false;
         }
         if ((prev.type === "message" && curr.type === "message") || (prev.type === undefined && curr.type === undefined)) {
-            if (prev.content !== curr.content || prev.role !== curr.role) {
+            if ((prev as any).content !== (curr as any).content || (prev as any).role !== (curr as any).role) {
                 return false;
             }
         } else if (prev.type === "function_call" && curr.type === "function_call") {
@@ -148,12 +148,12 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
     let rootNodeForSessionId = rootNodes.find(node => node.sessionId === sessionId);
     if (!rootNodeForSessionId) {
         assert(inputWithoutToolCalls[0].type === "message" || inputWithoutToolCalls[0].type === undefined, "Initial input must be a message");
-        assert(typeof inputWithoutToolCalls[0].content === "string", "Initial input must be a message with a string content");
+        assert(typeof (inputWithoutToolCalls[0] as any).content === "string", "Initial input must be a message with a string content");
         rootNodeForSessionId = {
             nodeId: uuidv4(),
             sessionId: sessionId,
-            role: inputWithoutToolCalls[0].role,
-            value: inputWithoutToolCalls[0].content,
+            role: (inputWithoutToolCalls[0] as any).role,
+            value: (inputWithoutToolCalls[0] as any).content,
             pointingToNode: [],
             name: name
         }
@@ -166,12 +166,12 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
         assert(functionCallNode !== undefined, "Function call node not found");
         if (functionCallNode.pointingToNode.length === 0) {
             assert(inputWithoutToolCalls[0].type === "message" || inputWithoutToolCalls[0].type === undefined, "Initial input must be a message");
-            assert(typeof inputWithoutToolCalls[0].content === "string", "Initial input must be a message with a string content");
+            assert(typeof (inputWithoutToolCalls[0] as any).content === "string", "Initial input must be a message with a string content");
             rootNodeForThisToolCall = {
                 nodeId: uuidv4(),
                 sessionId: sessionId,
-                role: inputWithoutToolCalls[0].role,
-                value: inputWithoutToolCalls[0].content,
+                role: (inputWithoutToolCalls[0] as any).role,
+                value: (inputWithoutToolCalls[0] as any).content,
                 pointingToNode: [],
                 name: name
             }
@@ -193,12 +193,12 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
         for (let i = startI; i < inputWithoutToolCalls.length; i++) {
             const currInput = inputWithoutToolCalls[i];
             assert(currInput.type === "message" || currInput.type === undefined, "Should never come here");
-            assert(typeof currInput.content === "string", "Should never come here");
+            assert(typeof (currInput as any).content === "string", "Should never come here");
             let newNode: Node = {
                 nodeId: uuidv4(),
                 sessionId: sessionId,
-                role: currInput.role,
-                value: currInput.content,
+                role: (currInput as any).role,
+                value: (currInput as any).content,
                 pointingToNode: [],
                 name: name
             }
@@ -211,12 +211,12 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
         for (let i = 0; i < inputWithoutToolCalls.length; i++) {
             const currInput = inputWithoutToolCalls[i];
             assert(currInput.type === "message" || currInput.type === undefined, "Should never come here");
-            assert(typeof currInput.content === "string", "Should never come here");
+            assert(typeof (currInput as any).content === "string", "Should never come here");
             let newNode: Node = {
                 nodeId: uuidv4(),
                 sessionId: sessionId,
-                role: currInput.role,
-                value: currInput.content,
+                role: (currInput as any).role,
+                value: (currInput as any).content,
                 pointingToNode: [],
                 name: name
             }
@@ -237,6 +237,9 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
             const toolCall = response.output[i];
             if (toolCall.type === "function_call") {
                 responseContainsToolCalls = true;
+                if ("parsed_arguments" in toolCall) {
+                    delete (toolCall as any).parsed_arguments;
+                }
                 input.push(toolCall);
                 let newNode: Node = {
                     nodeId: uuidv4(),

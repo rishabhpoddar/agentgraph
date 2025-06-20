@@ -1,6 +1,6 @@
 {
   "name": "@trythisapp/agentgraph",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "View your agentic flows and tool calling as a graph",
   "main": "dist/index.js",
   "module": "dist/index.m.js",
@@ -25,11 +25,11 @@
   },
   "homepage": "https://github.com/rishabhpoddar/agentgraph#readme",
   "devDependencies": {
-    "openai": "^4.95.1",
+    "@types/node": "^24.0.3",
+    "openai": "^5.5.1",
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "assert": "^2.1.0",
     "uuid": "^11.1.0"
   },
   "exports": {
