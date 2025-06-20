@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  
 ## [Unreleased] - yyyy-mm-dd
 
+## [0.1.0] - 2025-06-20
+
+### Added
+- Updated OpenAI SDK types to latest version (v5.5.1)
+
 ## [0.0.3] - 2025-06-07
 
 ### Added
