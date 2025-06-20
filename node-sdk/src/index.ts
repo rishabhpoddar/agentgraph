@@ -237,10 +237,14 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
             const toolCall = response.output[i];
             if (toolCall.type === "function_call") {
                 responseContainsToolCalls = true;
-                if ("parsed_arguments" in toolCall) {
-                    delete (toolCall as any).parsed_arguments;
-                }
-                input.push(toolCall);
+                input.push({
+                    type: "function_call",
+                    call_id: toolCall.call_id,
+                    id: toolCall.id,
+                    status: toolCall.status,
+                    name: toolCall.name,
+                    arguments: toolCall.arguments
+                });
                 let newNode: Node = {
                     nodeId: uuidv4(),
                     sessionId: sessionId,
