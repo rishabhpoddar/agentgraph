@@ -189,7 +189,6 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
         // We assume a one to one mapping between the nodes and the input without tool calls. This means that we assume that the user
         // has added the assistant response to the input message before the tool is called.
         let startI = getNumberOfNodesUntilLastNodeIsFound(name, rootNodeForThisToolCall).count;
-        assert(lastNonToolNode.value === (inputWithoutToolCalls[startI - 1] as any).content, "The value of the last node must be the same as the content of the input without tool calls. Did you forget to add the previous iteration's assistant's response to the input message? Alternatively, you can use a different session ID");
         for (let i = startI; i < inputWithoutToolCalls.length; i++) {
             const currInput = inputWithoutToolCalls[i];
             assert(currInput.type === "message" || currInput.type === undefined, "Should never come here");
@@ -258,6 +257,8 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
                 }
                 lastNonToolNode.pointingToNode.push(newNode);
                 writeNodeToFile(rootNodeForSessionId);
+            } else {
+                input.push(toolCall);
             }
         }
 
