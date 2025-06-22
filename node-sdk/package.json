@@ -1,6 +1,6 @@
 {
   "name": "@trythisapp/agentgraph",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "View your agentic flows and tool calling as a graph",
   "main": "dist/index.js",
   "module": "dist/index.m.js",

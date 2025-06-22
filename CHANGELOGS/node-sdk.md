@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  
 ## [Unreleased] - yyyy-mm-dd
 
+## [0.2.1] - 2025-06-22
+
+### Fixed
+- Support for non string type content as well.
+
 ## [0.2.0] - 2025-06-22
 
 ### Fixed
