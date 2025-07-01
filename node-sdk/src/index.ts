@@ -15,7 +15,7 @@ export type ToolImplementation = {
     }) => boolean
 }
 
-type Node = {
+export type Node = {
     nodeId: string;
     sessionId: string;
     role: "assistant" | "user" | "system" | "function_call" | "developer"
@@ -136,7 +136,7 @@ function isInputPrefixSame(previousInput: OpenAI.Responses.ResponseInput, newInp
     return true;
 }
 
-export async function callLLMWithToolHandling<T extends OpenAI.Responses.Response>(name: string, sessionId: string, toolId: string | undefined, f: (input: OpenAI.Responses.ResponseInput) => Promise<T>, initialInput: OpenAI.Responses.ResponseInput, toolImplementation: ToolImplementation[], maxToolCallIterations: number = 20, nameCount: number | undefined = undefined): Promise<T> {
+export async function callLLMWithToolHandling<T extends OpenAI.Responses.Response>(name: string, sessionId: string, toolId: string | undefined, f: (input: OpenAI.Responses.ResponseInput) => Promise<T>, initialInput: OpenAI.Responses.ResponseInput, toolImplementation: ToolImplementation[], saveNode: undefined | ((sessionId: string, node: Node) => Promise<void>) = undefined, maxToolCallIterations: number = 20, nameCount: number | undefined = undefined): Promise<T> {
     if (sessionIdNameInputMap[sessionId] === undefined) {
         sessionIdNameInputMap[sessionId] = {};
     }
@@ -148,7 +148,7 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
             sessionIdNameInputMap[sessionId][name] = [...initialInput];
         } else {
             name = name + " (" + (nameCount === undefined ? 1 : nameCount + 1) + ")";
-            return callLLMWithToolHandling(name, sessionId, toolId, f, initialInput, toolImplementation, maxToolCallIterations, nameCount === undefined ? 1 : nameCount + 1);
+            return callLLMWithToolHandling(name, sessionId, toolId, f, initialInput, toolImplementation, saveNode, maxToolCallIterations, nameCount === undefined ? 1 : nameCount + 1);
         }
     }
     let inputWithoutToolCalls = initialInput.filter(input => input.type === "message" || input.type === undefined);
@@ -164,7 +164,7 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
             name: name
         }
         rootNodes.push(rootNodeForSessionId);
-        writeNodeToFile(rootNodeForSessionId);
+        await writeNodeToFile(rootNodeForSessionId, saveNode);
     }
     let rootNodeForThisToolCall: Node | undefined = undefined;
     if (toolId !== undefined) {
@@ -181,7 +181,7 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
                 name: name
             }
             functionCallNode.pointingToNode.push(rootNodeForThisToolCall);
-            writeNodeToFile(rootNodeForSessionId);
+            await writeNodeToFile(rootNodeForSessionId, saveNode);
         } else {
             assert(functionCallNode.pointingToNode.length === 1, "Only one non-tool node is allowed");
             rootNodeForThisToolCall = functionCallNode.pointingToNode[0];
@@ -206,7 +206,7 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
                 name: name
             }
             lastNonToolNode.pointingToNode.push(newNode);
-            writeNodeToFile(rootNodeForSessionId);
+            await writeNodeToFile(rootNodeForSessionId, saveNode);
             lastNonToolNode = newNode;
         }
     } else {
@@ -223,7 +223,7 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
                 name: name
             }
             lastNonToolNode.pointingToNode.push(newNode);
-            writeNodeToFile(rootNodeForSessionId);
+            await writeNodeToFile(rootNodeForSessionId, saveNode);
             lastNonToolNode = newNode;
         }
     }
@@ -259,7 +259,7 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
                     toolCallIteration: iterationCount
                 }
                 lastNonToolNode.pointingToNode.push(newNode);
-                writeNodeToFile(rootNodeForSessionId);
+                await writeNodeToFile(rootNodeForSessionId, saveNode);
             } else {
                 input.push(toolCall);
             }
@@ -319,7 +319,7 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
                         });
                         if (!shouldExecuteInParallel) {
                             await p;
-                            writeNodeToFile(rootNodeForSessionId);
+                            await writeNodeToFile(rootNodeForSessionId, saveNode);
                         } else {
                             toolPromises.push(p);
                         }
@@ -336,7 +336,7 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
         }
         if (toolPromises.length > 0) {
             await Promise.all(toolPromises);
-            writeNodeToFile(rootNodeForSessionId);
+            await writeNodeToFile(rootNodeForSessionId, saveNode);
         }
     }
 
@@ -363,13 +363,21 @@ export async function callLLMWithToolHandling<T extends OpenAI.Responses.Respons
     }
     lastNonToolNode.pointingToNode.push(responseNode);
 
-    writeNodeToFile(rootNodeForSessionId);
+    await writeNodeToFile(rootNodeForSessionId, saveNode);
 
     return response;
 }
 
-function writeNodeToFile(node: Node) {
-    if (process.env.AGENT_GRAPH_SAVE_OUTPUT === "true") {
+async function writeNodeToFile(node: Node, saveNode: undefined | ((sessionId: string, node: Node) => Promise<void>) = undefined) {
+    if (saveNode !== undefined) {
+        try {
+            await saveNode(node.sessionId, node);
+        } catch {
+            // ignored..
+        }
+        return;
+    }
+    if (process.env.AGENT_GRAPH_SAVE_OUTPUT_TO_DIR === "true") {
         let outputDir = process.env.AGENT_GRAPH_OUTPUT_DIR || "./agentgraph_output";
         if (!outputDir.endsWith("/")) {
             outputDir += "/";

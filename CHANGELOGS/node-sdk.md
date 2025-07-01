@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  
 ## [Unreleased] - yyyy-mm-dd
 
+## [0.3.0] - 2025-07-01
+
+### Added
+- Support for saving the graph via a callback function.
+
 ## [0.2.1] - 2025-06-22
 
 ### Fixed

@@ -41,13 +41,13 @@ Add these environment variables to your `.env` file:
 
 ```
 AGENT_GRAPH_OUTPUT_DIR=./agentgraph_output
-AGENT_GRAPH_SAVE_OUTPUT=true
+AGENT_GRAPH_SAVE_OUTPUT_TO_DIR=true
 ```
 
 - `AGENT_GRAPH_OUTPUT_DIR`: The directory to save the output json files of the llm calls.
-- `AGENT_GRAPH_SAVE_OUTPUT`: Whether to save the output json files of the llm calls or not.
+- `AGENT_GRAPH_SAVE_OUTPUT_TO_DIR`: Whether to save the output json files of the llm calls or not to a directory.
 
-**IMPORTANT: We recommend that you set `AGENT_GRAPH_SAVE_OUTPUT` to `true` only in a development environment, and set it to `false` in a production environment. This is because we do not want to save output JSON files in the file system in production. We are working on storing the JSON files in a database instead, and when that is released, this can be enabled in production as well. Tool calling is not affected by this flag.**
+**IMPORTANT: We recommend that you set `AGENT_GRAPH_SAVE_OUTPUT_TO_DIR` to `true` only in a development environment, and set it to `false` in a production environment. This is because we do not want to save output JSON files in the file system in production. Instead, for production use cases, pass a callback to the `callLLMWithToolHandling` function, and save the output JSON files to your database (will be shown below).**
 
 ### Use without tool calling
 
@@ -313,6 +313,51 @@ try {
 
 - In the above, we see two agent calls: `my-agent1` and `my-agent2`. We pas the same `sessionId` to both of them, and this would result in the following graph: User message from `my-agent1` -> assistant message from `my-agent1` -> user message from `my-agent2` -> assistant message from `my-agent2`.
 - The node colours for `my-agent1` and `my-agent2` will be different, so it will be easier to see when the flow changes from one agent to another.
+
+### Save the output JSON files to your database
+This is appropriate for production env:
+
+```ts
+import { v4 } from 'uuid';
+import OpenAI from "openai";
+import { callLLMWithToolHandling, clearSessionId } from "@trythisapp/agentgraph";
+
+let openaiClient = new OpenAI({
+    apiKey: process.env['OPENAI_API_KEY'],
+});
+
+const agentName = "my-agent"
+const sessionId = v4(); // or it can be any other ID
+try {
+    let input: OpenAI.Responses.ResponseInput = [{role: "user", content: "Hello, how are you?"}];
+
+    let response = await callLLMWithToolHandling(agentName, sessionId, undefined, async (inp) => {
+        return await openaiClient.responses.create({
+            model: "gpt-4.1",
+            input: inp,
+        });
+    }, input, [], async (sessionId, node) => {
+        // node is a JSON object containing the entire graph.
+
+        // this is an example of how we can save the graph in a database that has two columns: sessionId (varchar(64)) and graph (jsonb).
+        await prisma.agentgraph.upsert({
+            where: { sessionId },
+            update: { graph: node },
+            create: { sessionId, graph: node }
+        })
+    });
+
+    console.log(response.output_text)
+} finally {
+    // this frees up the resources used by the sessionId
+    clearSessionId(sessionId);
+}
+```
+
+- In the above, we pass a callback to the `callLLMWithToolHandling` function. This callback is called each time there is a change in the graph. The `node` input contains the full graph (generated so far), so you can simply overwrite the existing row with the input `sessionId` to your database.
+- Also, please note that if you pass this callback to the `callLLMWithToolHandling` function, the wrapper function will not save the output JSON file to the file system.
+- Any errors thrown from the callback will be ignored.
+- The library waits for the callback to finish, so in case you want to save the node in the background, you can remove the `await` keyword in your implementation of the function.
 
 ## Integrating the Python SDK
 Coming soon...
